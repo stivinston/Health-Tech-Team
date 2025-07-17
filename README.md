@@ -11,12 +11,19 @@ L’objectif est de fournir aux patients des explications claires et adaptées �
 
 ## Fonctionnalités clés
 ✅ Interface utilisateur avec React.js
+
 ✅ Résumé médical généré automatiquement à partir des données patient
+
 ✅ Chatbot médical basé sur LangChain + modèle Hugging Face
+
 ✅ Support audio multilingue (français et anglais) : les réponses du chatbot peuvent être écoutées par le patient
+
 ✅ Mémoire conversationnelle persistante (SQLite)
+
 ✅ Personnalisation du style de réponse 
+
 ✅ Interface utilisateur médicale avec UI/UX adaptée
+
 ✅ Confidentialité respectée via session sécurisée et historisation locale
 
 ## Fonctionnalités en cours de développement
