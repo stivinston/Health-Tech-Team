@@ -1,0 +1,183 @@
+/* Conteneur principal */
+.main-container {
+  display: flex;
+  height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+/* --- Sidebar gauche --- */
+.sidebar {
+  width: 25%;
+  padding: 20px;
+  background-color: #f9fafb;
+  border-right: 1px solid #e5e7eb;
+  overflow-y: auto;
+}
+
+.sidebar h2 {
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  color: #1f2937;
+  text-align: center;
+}
+
+.sidebar label {
+  display: block;
+  font-size: 1rem;
+  margin-top: 10px;
+  margin-bottom: 5px;
+  color: #374151;
+}
+
+.sidebar input,
+.sidebar select {
+  width: 100%;
+  margin-bottom: 15px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 1rem;
+}
+
+.sidebar button {
+  width: 100%;
+  padding: 10px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.sidebar button:hover {
+  background-color: #2563eb;
+}
+
+.response {
+  margin-top: 20px;
+  background-color: #e0f2fe;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.response h3 {
+  margin-bottom: 10px;
+}
+
+.response button {
+  margin-top: 10px;
+  background-color: #10b981;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.response button:hover {
+  background-color: #059669;
+}
+
+/* --- Zone de chat à droite --- */
+.chat-area {
+  width: 75%;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh; /* Nécessaire pour que le flex fonctionne */
+  box-sizing: border-box;
+}
+
+
+.chat-area h2 {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  color: #186de3;
+}
+
+.section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
+
+.section label {
+  font-size: 1rem;
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.section input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 1rem;
+}
+
+.section button {
+  padding: 10px 15px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.section button:hover {
+  background-color: #2563eb;
+}
+
+/* Zone des messages du chat */
+.chat-box {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #f8fafc;
+  border: 1px solid #e5e7eb;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px; /* espace au-dessus de la saisie */
+}
+
+
+.chat-entry {
+  margin-bottom: 20px;
+  background-color: #f3f4f6;
+  padding: 12px;
+  border-radius: 6px;
+  position: relative;
+}
+
+.chat-entry p {
+  margin: 5px 0;
+  font-size: 0.95rem;
+}
+
+.chat-entry button {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  font-size: 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.chat-entry button:hover {
+  color: #2563eb;
+}
+
+/* Messages d'erreur */
+.response.error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 15px;
+}
