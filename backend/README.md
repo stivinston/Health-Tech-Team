@@ -1,7 +1,7 @@
 # Health Tech Assistant Backend
 
 ## Description
-Backend FastAPI pour l'assistant de santé utilisant l'IA pour fournir des descriptions médicales et répondre aux questions des patients.
+Backend FastAPI pour l'assistant de santé utilisant les LLM pour fournir des descriptions médicales et répondre aux questions des patients.
 
 ## Fonctionnalités
 - **Description patient** : Génère une description médicale empathique basée sur les données du patient
