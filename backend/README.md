@@ -7,7 +7,7 @@ Backend FastAPI pour l'assistant de santé utilisant l'IA pour fournir des descr
 - **Description patient** : Génère une description médicale empathique basée sur les données du patient
 - **Chat médical** : Répond aux questions des patients avec mémoire de conversation
 - **Synthèse vocale** : Convertit le texte en audio pour une meilleure accessibilité
-- **Accès par summary_id** : Authentification simple via ID de résumé
+- **Accès par patient_id** : Authentification simple via ID du patient
 
 ## Installation
 
@@ -84,7 +84,6 @@ Le fichier `clinical_summaries.csv` doit contenir les colonnes suivantes :
 
 - **Port** : 4000
 - **CORS** : Configuré pour localhost:3000 et localhost:8080
-- **Modèle IA** : Llama3-Med42-8B via HuggingFace
 - **Base de données** : SQLite pour la mémoire des conversations
 
 ## Sécurité
