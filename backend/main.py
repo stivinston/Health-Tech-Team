@@ -41,7 +41,7 @@ async def root():
 def load_data():
     """Load patient data from CSV file"""
     try:
-        return pd.read_csv("clinical_summaries.csv")
+        return pd.read_csv("data\clinical_summaries_cleaned.csv")
     except FileNotFoundError:
         raise HTTPException(status_code=500, detail="Fichier clinical_summaries.csv introuvable")
     except Exception as e:
@@ -130,6 +130,15 @@ def get_patient_data(summary_id: str):
     patient_descriptions_cache[summary_id] = patient_data
     
     return patient_data
+
+def get_patient_summary_by_date(patient_id: str):
+        liste_des_dates = df[df["patient_id"] == "P002538"][["date_recorded","diagnosis", "summary_text"]].values.tolist() # on recupere les dates et diagnostics
+        patient_info = {patient_id : liste_des_dates}
+        return patient_info
+
+def get_patient_summary_with_date():
+    # on retourne une liste de liste, chacun etant l'information du patient a une date precise
+    return {patient_id : get_patient_summary_by_date(patient_id) for patient_id in df["patient_id"].unique()}
 
 # --- Pydantic Models for Request/Response ---
 class PatientRequest(BaseModel):
