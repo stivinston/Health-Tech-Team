@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ChatSidebar } from './components/ChatSidebar';
 import { ChatInterface } from './components/ChatInterface';
-import { HealthTracker } from './components/HealthTracker';
+import { HealthTracker, Appointment } from './components/HealthTracker';
 import Login from './components/Login';
 import axios from 'axios';
 
@@ -21,8 +21,11 @@ type Language = 'french' | 'english';
 function App() {
   const [currentView, setCurrentView] = useState<View>('chat');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [summaryId, setSummaryId] = useState<string>('');
+  const [patientId, setpatientId] = useState<string>('');
   const [description, setDescription] = useState<string>('');
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
+  const appointmentsRef = useRef<Appointment[]>([]);
   const [theme, setTheme] = useState<Theme>(() => {
     // Récupérer le thème depuis localStorage ou utiliser 'light' par défaut
     return (localStorage.getItem('theme') as Theme) || 'light';
@@ -48,18 +51,18 @@ function App() {
 
   useEffect(() => {
     // Vérifier si l'utilisateur est déjà authentifié depuis le localStorage
-    const savedSummaryId = localStorage.getItem('summaryId');
+    const savedpatientId = localStorage.getItem('patientId');
     const cachedDescription = localStorage.getItem('patientDescription');
     
-    if (savedSummaryId) {
-      setSummaryId(savedSummaryId);
+    if (savedpatientId) {
+      setpatientId(savedpatientId);
       setIsAuthenticated(true);
       
       // Utiliser la description en cache si elle existe
       if (cachedDescription) {
         setDescription(cachedDescription);
       } else {
-        fetchPatientDescription(savedSummaryId);
+        fetchPatientDescription(savedpatientId);
       }
     }
   }, []);
@@ -94,7 +97,7 @@ function App() {
       
       // Si pas dans le cache, faire l'appel API
       const response = await axios.post('http://localhost:4000/patient-description', {
-        summary_id: id,
+        patient_id: id,
         language: textLang
       });
       
@@ -109,17 +112,30 @@ function App() {
     }
   };
 
+  const fetchAppointments = async (patientId: string) => {
+    try {
+      const response = await axios.post('http://localhost:4000/appointments', {
+        patient_id: patientId,
+        language: textLang
+      });
+      setAppointments(response.data);
+    } catch (err) {
+      console.error('Erreur lors du chargement des rendez-vous:', err);
+      setAppointments([]);
+    }
+  };
+
   const handleLogin = async (id: string) => {
     try {
       // Vérifier d'abord dans le cache local
       const cachedDescription = localStorage.getItem('patientDescription');
       
-      if (cachedDescription && localStorage.getItem('summaryId') === id) {
+      if (cachedDescription && localStorage.getItem('patientId') === id) {
         setDescription(cachedDescription);
       } else {
         // Si pas dans le cache, faire l'appel API
         const response = await axios.post('http://localhost:4000/patient-description', {
-          summary_id: id,
+          patient_id: id,
           language: textLang
         });
         
@@ -129,26 +145,74 @@ function App() {
         localStorage.setItem('patientDescription', patientDescription);
       }
       
-      setSummaryId(id);
+      // Charger les rendez-vous
+      await fetchAppointments(id);
+      
+      setpatientId(id);
       setIsAuthenticated(true);
-      localStorage.setItem('summaryId', id);
+      localStorage.setItem('patientId', id);
       setError('');
     } catch (err) {
-      setError('Invalid Summary ID. Please try again.');
+      setError('Invalid patient ID. Please try again.');
       console.error('Login error:', err);
     }
   };
 
+  // Charger les rendez-vous une seule fois lors de la connexion
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      if (!patientId) return;
+      
+      try {
+        setIsLoadingAppointments(true);
+        const response = await fetch('http://localhost:4000/appointments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ patient_id: patientId, language: 'fr' }),
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch appointments');
+
+        const data = await response.json();
+        const appointmentsWithDates = data.map((appt: any) => ({
+          ...appt,
+          date_recorded: typeof appt.date_recorded === 'string' 
+            ? new Date(appt.date_recorded) 
+            : appt.date_recorded
+        }));
+        
+        setAppointments(appointmentsWithDates);
+        appointmentsRef.current = appointmentsWithDates;
+      } catch (error) {
+        console.error('Error fetching appointments:', error);
+      } finally {
+        setIsLoadingAppointments(false);
+      }
+    };
+
+    fetchAppointments();
+  }, [patientId]);
+
+  const resetConversation = () => {
+    setConversation({
+      id: Date.now().toString(),
+      title: 'Health Tech Assistant',
+      messages: [],
+      createdAt: new Date()
+    });
+  };
+
   const handleLogout = () => {
     setIsAuthenticated(false);
-    setSummaryId('');
+    setpatientId('');
     setDescription('');
-    localStorage.removeItem('summaryId');
-    // Ne pas supprimer le cache de la description pour une réutilisation ultérieure
+    setAppointments([]);
+    appointmentsRef.current = [];
+    localStorage.removeItem('patientId');
   };
 
   const handleSendMessage = async (message: string) => {
-    if (!summaryId) return;
+    if (!patientId) return;
 
     const userMessage = {
       id: Date.now().toString(),
@@ -166,7 +230,7 @@ function App() {
     try {
       // Send message to backend
       const response = await axios.post('http://localhost:4000/chat-response', {
-        summary_id: summaryId,
+        patient_id: patientId,
         question: message
       });
 
@@ -216,15 +280,21 @@ function App() {
       <div className="flex h-screen bg-white">
         <ChatSidebar 
           currentView={currentView}
-          onViewChange={setCurrentView}
+          onViewChange={(view) => {
+            setCurrentView(view);
+            if (view === 'chat') {
+              resetConversation();
+            }
+          }}
           description={description}
           audioLang={audioLang}
-          summaryId={summaryId}
+          patientId={patientId}
           onLogout={handleLogout}
           onThemeChange={handleThemeChange}
           onLanguageChange={handleLanguageChange}
           currentTheme={theme}
           currentLanguage={language}
+          onNewChat={resetConversation}
         />
         <main className="flex-1 flex flex-col overflow-hidden">
           {currentView === 'chat' ? (
@@ -233,7 +303,11 @@ function App() {
               onSendMessage={handleSendMessage} 
             />
           ) : (
-            <HealthTracker />
+            <HealthTracker 
+              patientId={patientId} 
+              appointments={appointments}
+              isLoading={isLoadingAppointments}
+            />
           )}
         </main>
       </div>

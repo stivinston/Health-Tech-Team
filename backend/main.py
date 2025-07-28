@@ -1,3 +1,4 @@
+from datetime import date
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -13,7 +14,6 @@ from langchain_community.chat_message_histories import SQLChatMessageHistory
 from huggingface_hub import InferenceClient
 from langchain_core.language_models import LLM
 from typing import List
-import pyttsx3
 import os
 from gtts import gTTS
 
@@ -41,7 +41,7 @@ async def root():
 def load_data():
     """Load patient data from CSV file"""
     try:
-        return pd.read_csv("data\clinical_summaries_cleaned.csv")
+        return pd.read_csv("clinical_summaries_cleaned.csv")
     except FileNotFoundError:
         raise HTTPException(status_code=500, detail="Fichier clinical_summaries.csv introuvable")
     except Exception as e:
@@ -83,7 +83,7 @@ Langue : {langue}
 llm_prompt = PromptTemplate.from_template("""
 Tu es un médecin expérimenté, bienveillant et compétent.  
 Tu as déjà consulté le patient et tu disposes de ses données médicales.  
-Ta mission est de répondre à toutes ses préoccupations avec clarté, empathie et autorité médicale.  
+Ta mission est de répondre à ses préoccupations avec clarté, empathie et autorité médicale.  
 Utilise un ton rassurant et humain, mais reste concis et médicalement rigoureux.  
 Ne propose pas d'aller consulter un autre médecin : tu es celui qui l’a vu.  
 Exprime-toi dans la même langue que le patient.  
@@ -111,42 +111,38 @@ def create_persistent_memory(session_id: str, db_path: str = "chat_memory.sqlite
     return memory
 
 # --- Cache pour les descriptions des patients ---
-patient_descriptions_cache: Dict[str, str] = {}
+patient_descriptions_cache: Dict[str, List[Dict]] = {}
 
 # --- Helper Functions ---
-def get_patient_data(summary_id: str):
-    """Get patient data by summary_id from CSV"""
-    if summary_id not in df["summary_id"].values:
+def get_patient_data(patient_id: str):
+    """Get patient data by patient_id from CSV"""
+    if patient_id not in df["patient_id"].values:
         raise HTTPException(status_code=404, detail="ID introuvable. Veuillez vérifier.")
     
     # Vérifier d'abord dans le cache
-    if summary_id in patient_descriptions_cache:
-        return patient_descriptions_cache[summary_id]
+    if patient_id in patient_descriptions_cache:
+        return patient_descriptions_cache[patient_id]
     
-    patient_info = df[df["summary_id"] == summary_id].fillna("Inconnu")
-    patient_data = patient_info.to_dict(orient="records")[0]
-    
-    # Mettre en cache la description
-    patient_descriptions_cache[summary_id] = patient_data
+    patient_info = df[df["patient_id"] == patient_id].fillna("Inconnu")
+    patient_data = patient_info.to_dict(orient="records")
     
     return patient_data
 
-# def get_patient_summary_by_date(patient_id: str):
-#         liste_des_dates = df[df["patient_id"] == "P002538"][["date_recorded","diagnosis", "summary_text"]].values.tolist() # on recupere les dates et diagnostics
-#         patient_info = {patient_id : liste_des_dates}
-#         return patient_info
-
-# def get_patient_summary_with_date():
-#     # on retourne une liste de liste, chacun etant l'information du patient a une date precise
-#     return {patient_id : get_patient_summary_by_date(patient_id) for patient_id in df["patient_id"].unique()}
-
 # --- Pydantic Models for Request/Response ---
 class PatientRequest(BaseModel):
-    summary_id: str
+    patient_id: str
     language: str
 
+class AppointmentResponse(BaseModel):
+    date_recorded: date
+    diagnosis: str
+    body_temp_c: float
+    blood_pressure_systolic: float
+    heart_rate: float
+    summary_text: str
+
 class ChatRequest(BaseModel):
-    summary_id: str
+    patient_id: str
     question: str
 
 class AudioRequest(BaseModel):
@@ -156,12 +152,23 @@ class AudioRequest(BaseModel):
 # --- API Endpoints ---
 @app.post("/patient-description", response_model=dict)
 async def get_patient_description(request: PatientRequest):
-    """Get patient description based on summary_id"""
+    """Get patient description based on patient_id"""
     try:
-        context_dict = get_patient_data(request.summary_id)
+        context_dict = get_patient_data(request.patient_id)
+        
+        entries_with_date = [entry for entry in context_dict if entry['date_recorded'] is not None]
+
+        # Trouver la date la plus récente
+        latest_date = max(entry['date_recorded'] for entry in entries_with_date)
+
+        # Extraire les entrées correspondant à cette date
+        latest_entries = [entry for entry in entries_with_date if entry['date_recorded'] == latest_date]
+        
+        # Mettre en cache la description
+        patient_descriptions_cache[request.patient_id] = latest_entries
         
         desc_chain = desc_prompt | llm | StrOutputParser()
-        description = desc_chain.invoke({"contexte": context_dict, "langue": request.language})
+        description = desc_chain.invoke({"contexte": latest_entries, "langue": request.language})
         
         return {"description": description}
     except HTTPException:
@@ -173,9 +180,9 @@ async def get_patient_description(request: PatientRequest):
 async def get_chat_response(request: ChatRequest):
     """Get chat response for patient questions"""
     try:
-        context_dict = get_patient_data(request.summary_id)
+        context_dict = get_patient_data(request.patient_id)
         
-        memory = create_persistent_memory(session_id=request.summary_id)
+        memory = create_persistent_memory(session_id=request.patient_id)
         
         rag_chain = (
             {
@@ -232,7 +239,51 @@ async def text_to_speech(request: AudioRequest):
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "data_loaded": len(df) > 0 if 'df' in globals() else False}
+    return {"status": "ok", "message": "Service is running"}
+
+def sanitize_float(value):
+    """Convert float values to be JSON serializable, handling NaN and Infinity"""
+    if isinstance(value, float):
+        if value != value:  # Check for NaN
+            return None
+        if abs(value) == float('inf'):
+            return None
+        return round(value, 2)  # Round to 2 decimal places for consistency
+    return value
+
+@app.post("/appointments", response_model=List[AppointmentResponse])
+async def get_patient_appointments(request: PatientRequest):
+    """Get all appointments for a specific patient"""
+    patient_id = request.patient_id
+    try:
+        # Vérifier si le patient existe
+        if patient_id not in df["patient_id"].values:
+            raise HTTPException(status_code=404, detail="Patient non trouvé")
+        
+        # Récupérer tous les rendez-vous du patient
+        appointments = df[df["patient_id"] == patient_id].to_dict(orient="records")
+        
+        # Formater les données pour la réponse
+        formatted_appointments = []
+        for appt in appointments:
+            # Sanitize all numeric values
+            sanitized_appt = {
+                "date_recorded": appt.get("date_recorded"),
+                "diagnosis": appt.get("diagnosis", ""),
+                "body_temp_c": sanitize_float(appt.get("body_temp_c")),
+                "blood_pressure_systolic": sanitize_float(appt.get("blood_pressure_systolic")),
+                "heart_rate": sanitize_float(appt.get("heart_rate")),
+                "summary_text": appt.get("summary_text", "")
+            }
+            formatted_appointments.append(sanitized_appt)
+        
+        return formatted_appointments
+    except Exception as e:
+        error_detail = str(e)
+        # Handle specific JSON serialization errors
+        if "Out of range float values" in error_detail or "NaN" in error_detail:
+            error_detail = "Data contains invalid numeric values that cannot be serialized to JSON"
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des rendez-vous: {error_detail}")
 
 if __name__ == "__main__":
     import uvicorn

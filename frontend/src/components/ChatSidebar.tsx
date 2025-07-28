@@ -22,12 +22,13 @@ interface ChatSidebarProps {
   description?: string;
   onAudioPlay?: (text: string) => void;
   audioLang?: string;
-  summaryId?: string;
+  patientId?: string;
   onLogout?: () => void;
   onThemeChange?: (theme: Theme) => void;
   onLanguageChange?: (lang: Language) => void;
   currentTheme?: Theme;
   currentLanguage?: Language;
+  onNewChat?: () => void;
 }
 
 export function ChatSidebar({ 
@@ -36,9 +37,11 @@ export function ChatSidebar({
   description, 
   onAudioPlay, 
   audioLang, 
+  patientId,
   onLogout, 
   onThemeChange = () => {}, 
   onLanguageChange = () => {},
+  onNewChat = () => {},
   currentTheme = 'light',
   currentLanguage = 'french'
 }: ChatSidebarProps) {
@@ -54,9 +57,9 @@ export function ChatSidebar({
   };
 
   return (
-    <div className={`${isCollapsed ? 'w-16' : 'w-64'} h-full bg-gray-50 border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out`}>
+    <div className={`${isCollapsed ? 'w-20' : 'w-80'} h-full bg-gray-50 border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out`}>
       <div className="p-4 border-b flex justify-between items-center">
-        {!isCollapsed && <h1 className="text-xl font-semibold">Health App</h1>}
+        {!isCollapsed && <h1 className="text-xl font-semibold">Health App - {patientId || 'No ID'}</h1>}
         <Button
           variant="ghost"
           size="icon"
@@ -68,17 +71,15 @@ export function ChatSidebar({
       </div>
 
       <div className="p-4 border-b">
-        <Button className="w-full mb-2" onClick={() => onViewChange('chat')}>
+        <Button 
+          className="w-full mb-2" 
+          onClick={() => {
+            onViewChange('chat');
+            onNewChat?.();
+          }}
+        >
           <MessageSquare className="mr-2 h-4 w-4" />
           New Chat
-        </Button>
-        <Button 
-          variant="outline" 
-          className="w-full"
-          onClick={() => onViewChange('health')}
-        >
-          <Activity className="mr-2 h-4 w-4" />
-          Health Tracker
         </Button>
       </div>
       

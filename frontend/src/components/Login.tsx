@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
 
 interface LoginProps {
-  onLogin: (summaryId: string) => void;
+  onLogin: (patientId: string) => void;
   error?: string;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin, error }) => {
-  const [summaryId, setSummaryId] = useState('');
+  const [patientId, setpatientId] = useState('');
   const [localError, setLocalError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!summaryId.trim()) {
-      setLocalError('Please enter a valid Summary ID');
+    if (!patientId.trim()) {
+      setLocalError('Please enter a valid Patient ID');
       return;
     }
-    onLogin(summaryId);
+    onLogin(patientId);
   };
 
   const displayError = error || localError;
@@ -26,14 +26,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, error }) => {
         <h2 className="text-2xl font-bold mb-6 text-center">Health App Login</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="summaryId">
-              Summary ID
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="patientId">
+              Patient ID
             </label>
             <input
-              id="summaryId"
+              id="patientId"
               type="text"
-              value={summaryId}
-              onChange={(e) => setSummaryId(e.target.value)}
+              value={patientId}
+              onChange={(e) => setpatientId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter your patient ID"
             />
