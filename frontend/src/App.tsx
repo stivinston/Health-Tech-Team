@@ -96,7 +96,7 @@ function App() {
       }
       
       // Si pas dans le cache, faire l'appel API
-      const response = await axios.post('http://localhost:4000/patient-description', {
+      const response = await axios.post('https://health-tech-team.onrender.com/patient-description', {
         patient_id: id,
         language: textLang
       });
@@ -114,7 +114,7 @@ function App() {
 
   const fetchAppointments = async (patientId: string) => {
     try {
-      const response = await axios.post('http://localhost:4000/appointments', {
+      const response = await axios.post('https://health-tech-team.onrender.com/appointments', {
         patient_id: patientId,
         language: textLang
       });
@@ -134,7 +134,7 @@ function App() {
         setDescription(cachedDescription);
       } else {
         // Si pas dans le cache, faire l'appel API
-        const response = await axios.post('http://localhost:4000/patient-description', {
+        const response = await axios.post('https://health-tech-team.onrender.com/patient-description', {
           patient_id: id,
           language: textLang
         });
@@ -165,7 +165,7 @@ function App() {
       
       try {
         setIsLoadingAppointments(true);
-        const response = await fetch('http://localhost:4000/appointments', {
+        const response = await fetch('https://health-tech-team.onrender.com/appointments', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ patient_id: patientId, language: 'fr' }),
@@ -229,7 +229,7 @@ function App() {
 
     try {
       // Send message to backend
-      const response = await axios.post('http://localhost:4000/chat-response', {
+      const response = await axios.post('https://health-tech-team.onrender.com/chat-response', {
         patient_id: patientId,
         question: message
       });
@@ -253,7 +253,7 @@ function App() {
 
   const handleAudioPlay = async (text: string) => {
     try {
-      await axios.post('http://localhost:4000/text-to-speech', {
+      await axios.post('https://health-tech-team.onrender.com/text-to-speech', {
         text,
         language: audioLang
       });
