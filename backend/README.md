@@ -36,7 +36,7 @@ Le serveur sera accessible sur `http://localhost:4000`
 - **Body** :
 ```json
 {
-  "summary_id": "PAT001",
+  "patient_id": "PAT001",
   "language": "french"
 }
 ```
@@ -46,7 +46,7 @@ Le serveur sera accessible sur `http://localhost:4000`
 - **Body** :
 ```json
 {
-  "summary_id": "PAT001",
+  "patient_id": "PAT001",
   "question": "Que dois-je faire pour ma tension ?"
 }
 ```
@@ -61,6 +61,15 @@ Le serveur sera accessible sur `http://localhost:4000`
 }
 ```
 
+### POST /appointments
+- **Description** : Recupère les symptomes du patient
+- **Body** :
+```json
+{
+  "patient_id": "PAT001",
+  "language": "french"
+}
+
 ### GET /health
 - **Description** : Vérification de l'état du serveur
 - **Réponse** : `{"status": "healthy", "data_loaded": true}`
@@ -68,17 +77,16 @@ Le serveur sera accessible sur `http://localhost:4000`
 ## Structure des données CSV
 
 Le fichier `clinical_summaries.csv` doit contenir les colonnes suivantes :
-- `summary_id` : Identifiant unique du patient
-- `patient_name` : Nom du patient
-- `age` : Âge
-- `gender` : Sexe (M/F)
-- `temperature` : Température corporelle
-- `blood_pressure` : Tension artérielle
+- `summary_id` : Identifiant de la consultation
+- `patient_id` : Identifiant du patient
+- `patient_age` : Âge du patient
+- `patient_gender` : Age du patient (M,F, Unknown)
+- `body_temp_c` : Température corporelle
+- `blood_pressure_systolic` : Tension artérielle
 - `heart_rate` : Rythme cardiaque
 - `diagnosis` : Diagnostic
-- `symptoms` : Symptômes
-- `treatment` : Traitement
-- `notes` : Notes additionnelles
+- `summary_text` : Symptômes
+- `date_recorded` : Date de consultations
 
 ## Configuration
 
@@ -87,6 +95,3 @@ Le fichier `clinical_summaries.csv` doit contenir les colonnes suivantes :
 - **Modèle IA** : Llama3-Med42-8B via HuggingFace
 - **Base de données** : SQLite pour la mémoire des conversations
 
-## Sécurité
-
-⚠️ **Important** : Remplacez la clé API HuggingFace dans le code par votre propre clé avant la production.
