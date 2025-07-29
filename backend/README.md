@@ -69,6 +69,7 @@ Le serveur sera accessible sur `http://localhost:4000`
   "patient_id": "PAT001",
   "language": "french"
 }
+```
 
 ### GET /health
 - **Description** : Vérification de l'état du serveur
