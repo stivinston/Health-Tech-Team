@@ -99,7 +99,7 @@ Réponse :
 """)
 
 # --- Memory Setup ---
-def create_persistent_memory(session_id: str, db_path: str = "chat_memory.sqlite"):
+def create_persistent_memory(session_id: str, db_path: str = "/tmp/chat_memory.sqlite"):
     """Create persistent memory for chat sessions using SQLite"""
     message_history = SQLChatMessageHistory(session_id=session_id, connection_string=f"sqlite:///{db_path}")
     memory = ConversationBufferMemory(
